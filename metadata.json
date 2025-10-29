@@ -1,0 +1,5 @@
+{
+  "name": "ThumbnailAI Pro",
+  "description": "An AI-powered application that uses Google Gemini to generate professional YouTube thumbnails in seconds. Users upload their images and select a style, and the AI creates the optimal composition.",
+  "requestFramePermissions": []
+}
