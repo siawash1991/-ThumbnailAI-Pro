@@ -8,6 +8,8 @@ import Canvas from './components/Canvas';
 import Loader from './components/Loader';
 import { generateThumbnail } from './services/geminiService';
 
+const FACIAL_EXPRESSIONS = ['Surprised', 'Happy', 'Serious', 'Angry', 'Thinking', 'Excited', 'Confused', 'Laughing'];
+
 const App: React.FC = () => {
   const [mainImage, setMainImage] = useState<ImageFile | null>(null);
   const [elementImages, setElementImages] = useState<ImageFile[]>([]);
@@ -15,6 +17,8 @@ const App: React.FC = () => {
   const [thumbnailText, setThumbnailText] = useState<string>('');
   const [isTextEnabled, setIsTextEnabled] = useState<boolean>(true);
   const [layoutDescription, setLayoutDescription] = useState<string>('');
+  const [mainImageUsage, setMainImageUsage] = useState<'face_only' | 'whole'>('face_only');
+  const [facialExpression, setFacialExpression] = useState<string>(FACIAL_EXPRESSIONS[0]);
   const [generatedThumbnails, setGeneratedThumbnails] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +40,7 @@ const App: React.FC = () => {
     const textToSend = isTextEnabled ? thumbnailText : '';
 
     try {
-      const results = await generateThumbnail(mainImage, elementImages, selectedStyle, textToSend, layoutDescription);
+      const results = await generateThumbnail(mainImage, elementImages, selectedStyle, textToSend, layoutDescription, mainImageUsage, facialExpression);
       const formattedResults = results.map(res => `data:image/png;base64,${res}`);
       setGeneratedThumbnails(formattedResults);
     } catch (e) {
@@ -45,7 +49,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [mainImage, elementImages, selectedStyle, thumbnailText, layoutDescription, isTextEnabled]);
+  }, [mainImage, elementImages, selectedStyle, thumbnailText, layoutDescription, isTextEnabled, mainImageUsage, facialExpression]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
@@ -67,6 +71,39 @@ const App: React.FC = () => {
                   <i className="fa-solid fa-triangle-exclamation mr-1"></i>
                   IMPORTANT: The person in this image will appear in your thumbnail!
                 </p>
+                
+                {mainImage && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">How to use main image?</label>
+                      <div className="flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-700">
+                        <button onClick={() => setMainImageUsage('face_only')} className={`flex-1 text-center text-sm py-1.5 rounded-md transition ${mainImageUsage === 'face_only' ? 'bg-white dark:bg-gray-900 text-red-600 font-semibold shadow' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                          Re-create Face
+                        </button>
+                        <button onClick={() => setMainImageUsage('whole')} className={`flex-1 text-center text-sm py-1.5 rounded-md transition ${mainImageUsage === 'whole' ? 'bg-white dark:bg-gray-900 text-red-600 font-semibold shadow' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                          Use Whole Image
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {mainImageUsage === 'face_only' && (
+                      <div>
+                        <label htmlFor="facial-expression" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Facial Expression</label>
+                        <select
+                          id="facial-expression"
+                          value={facialExpression}
+                          onChange={(e) => setFacialExpression(e.target.value)}
+                          className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                        >
+                          {FACIAL_EXPRESSIONS.map(expr => (
+                            <option key={expr} value={expr}>{expr}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <ImageUploader
                   label="Elements (Logo, etc.)"
                   onImageUpload={(img) => setElementImages(prev => [...prev, img].slice(0, 3))}

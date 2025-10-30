@@ -29,7 +29,9 @@ export const generateThumbnail = async (
   elementImages: ImageFile[],
   style: StyleTemplate,
   text: string,
-  layoutDescription: string
+  layoutDescription: string,
+  mainImageUsage: 'face_only' | 'whole',
+  facialExpression: string
 ): Promise<string[]> => {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
@@ -48,16 +50,24 @@ export const generateThumbnail = async (
 *   The text MUST be extremely readable on mobile screens. Use high-contrast colors, bold fonts, and effects like strokes or shadows as dictated by the chosen style.`
           : `*   NO TEXT OVERLAY. This is a visual-only thumbnail. Do not add any words, letters, or numbers to the image.`;
 
+      const characterInstruction = mainImageUsage === 'face_only'
+        ? `1.  **CHARACTER CONSISTENCY (HIGHEST PRIORITY):**
+    *   The person in the first reference image (the main subject) MUST appear recognizably in the final thumbnail.
+    *   Re-create the person with a **${facialExpression}** facial expression.
+    *   Keep their EXACT facial features: face shape, eyes, nose, mouth, hair, skin tone.
+    *   DO NOT change their identity or create a generic look-alike. They must be identifiable.`
+        : `1.  **MAIN SUBJECT USAGE (HIGHEST PRIORITY):**
+    *   The first reference image is the main subject. You MUST incorporate this entire image into the thumbnail.
+    *   Retain the original pose, expression, and clothing from the image unless specifically overridden by the layout description.
+    *   Blend the subject image seamlessly with the background and the chosen style. Do not simply paste it; it should look like part of a cohesive design.`;
+
 
       const prompt = `
       CRITICAL INSTRUCTIONS FOR THUMBNAIL GENERATION:
 
       This is variant ${index + 1} of 2. Please provide a slightly different composition or creative take for this variant.
 
-      1.  **CHARACTER CONSISTENCY (HIGHEST PRIORITY):**
-          *   The person in the first reference image (the main subject) MUST appear recognizably in the final thumbnail.
-          *   Keep their EXACT facial features: face shape, eyes, nose, mouth, hair, skin tone.
-          *   DO NOT change their identity or create a generic look-alike. They must be identifiable.
+      ${characterInstruction}
 
       2.  **LAYOUT FROM USER INPUT:**
           *   The user has provided the following description for the layout: "${layoutDescription || 'Creator has not provided a specific layout, use your best judgement to create a dynamic and engaging composition based on the style guide.'}"
